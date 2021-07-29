@@ -1,0 +1,15 @@
+[package]
+name = "rust-tc"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bls12_381 = "0.5.0"
+zeroize = "1.4.1"
+rand = "0.8.4"
+ff = "0.10.0"
+tiny-keccak = { version = "2.0", features = ["sha3"] }
+group = "0.10.0"
+rand_chacha = "0.3.1"
