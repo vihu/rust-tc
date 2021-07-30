@@ -13,3 +13,5 @@ ff = "0.10.0"
 tiny-keccak = { version = "2.0", features = ["sha3"] }
 group = "0.10.0"
 rand_chacha = "0.3.1"
+subtle = "2.4.1"
+anyhow = "1.0.42"
