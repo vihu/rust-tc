@@ -33,6 +33,17 @@ impl SecretKey {
         SecretKey::random(rng)
     }
 
+    /// Returns the matching public key.
+    pub fn public_key(&self) -> PublicKey {
+        let g = G1Affine::generator();
+        PublicKey(G1Affine::from(g * self.0))
+    }
+
+    /// Sign given msg using secret key
+    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
+        Signature(G2Affine::from(hash_g2(msg) * self.0))
+    }
+
     pub fn default() -> Self {
         SecretKey::from_scalar(Scalar::zero())
     }
@@ -61,16 +72,6 @@ impl SecretKey {
     /// XXX: Don't use this too
     pub fn from_scalar(scalar: Scalar) -> Self {
         SecretKey(scalar)
-    }
-
-    /// Returns the matching public key.
-    pub fn public_key(&self) -> PublicKey {
-        let g = G1Affine::generator();
-        PublicKey(G1Affine::from(g * self.0))
-    }
-
-    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
-        Signature(G2Affine::from(hash_g2(msg) * self.0))
     }
 }
 
