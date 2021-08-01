@@ -9,7 +9,7 @@ use subtle::{Choice, ConstantTimeEq};
 const PKSIZE: usize = 48;
 
 /// A public key.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq)]
 pub struct PublicKey(pub G1Affine);
 
 impl PublicKey {
@@ -19,7 +19,7 @@ impl PublicKey {
         gt1 == gt2
     }
 
-    pub fn validate(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         self.0.to_compressed().len() == PKSIZE
     }
 
@@ -76,15 +76,52 @@ mod tests {
     fn valid() {
         let sk = SecretKey::new();
         let pk = sk.public_key();
-        assert!(pk.validate())
+        assert!(pk.is_valid())
     }
 
     #[test]
-    fn encrypt() {
+    fn enc_dec() {
         let sk = SecretKey::new();
         let pk = sk.public_key();
         let msg = b"Rip and tear, until it's done";
         let encrypted = pk.encrypt(msg);
-        assert!(encrypted.verify())
+        assert!(encrypted.verify());
+        if let Some(decrypted) = sk.decrypt(&encrypted) {
+            assert_eq!(decrypted, msg)
+        } else {
+            assert!(false)
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn other_sk_enc_dec() {
+        let sk = SecretKey::new();
+        let other_sk = SecretKey::new();
+        let pk = sk.public_key();
+        let msg = b"Rip and tear, until it's done";
+        let encrypted = pk.encrypt(msg);
+        assert!(encrypted.verify());
+        if let Some(decrypted) = other_sk.decrypt(&encrypted) {
+            assert_eq!(decrypted, msg)
+        } else {
+            assert!(false)
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn other_msg_enc_dec() {
+        let sk = SecretKey::new();
+        let pk = sk.public_key();
+        let msg = b"Rip and tear, until it's done";
+        let other_msg = b"Don't Rip and tear, until it's done";
+        let encrypted = pk.encrypt(msg);
+        assert!(encrypted.verify());
+        if let Some(decrypted) = sk.decrypt(&encrypted) {
+            assert_eq!(decrypted, other_msg)
+        } else {
+            assert!(false)
+        }
     }
 }

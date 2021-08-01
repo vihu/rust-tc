@@ -4,6 +4,10 @@ use bls12_381::{
     multi_miller_loop, pairing, G1Affine, G2Affine, G2Prepared, G2Projective, Gt, MillerLoopResult,
     Scalar,
 };
+use serde::de::{self, Visitor};
+use serde::{Deserialize, Serialize, Serializer};
+use std::convert::TryInto;
+use std::fmt;
 use std::ops::{AddAssign, Mul};
 
 const SIGSIZE: usize = 96;
@@ -12,15 +16,56 @@ const SIGSIZE: usize = 96;
 pub struct Signature(pub G2Affine);
 
 impl Signature {
-    pub fn validate(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         self.0.to_compressed().len() == SIGSIZE
+    }
+}
+
+impl Serialize for Signature {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bytes(&self.0.to_compressed())
+    }
+}
+
+struct SigVisitor;
+
+fn coerce_size(v: &[u8]) -> &[u8; SIGSIZE] {
+    v.try_into().expect("Signature with incorrect length")
+}
+
+impl<'de> Visitor<'de> for SigVisitor {
+    type Value = Signature;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("an integer between -2^31 and 2^31")
+    }
+
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Signature(
+            G2Affine::from_compressed(coerce_size(v)).unwrap(),
+        ))
+    }
+}
+
+impl<'de> Deserialize<'de> for Signature {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_bytes(SigVisitor)
     }
 }
 
 pub fn aggregate(sigs: &[Signature]) -> Result<Signature> {
     let agg = &sigs[0];
 
-    if !agg.validate() {
+    if !agg.is_valid() {
         bail!("Cannot validate signature {:?}", agg)
     }
 
@@ -28,7 +73,7 @@ pub fn aggregate(sigs: &[Signature]) -> Result<Signature> {
 
     for i in 1..sigs.len() {
         let next = &sigs[i];
-        if !next.validate() {
+        if !next.is_valid() {
             bail!("Cannot validate signature {:?}", next)
         }
         aggregate.add_assign(&next.0)
@@ -101,11 +146,13 @@ pub fn verify_messages(
 
 #[cfg(test)]
 mod tests {
+    use core::panic;
+
     use super::*;
     use crate::sk::SecretKey;
 
     #[test]
-    fn aggregate_sig() {
+    fn verify_agg() {
         let sk1 = SecretKey::new();
         let pk1 = sk1.public_key();
         let sk2 = SecretKey::new();
@@ -120,6 +167,8 @@ mod tests {
         if let Ok(agg_sig) = aggregate(&[sig1, sig2]) {
             if let Ok(res) = verify_messages(&agg_sig, &[msg1, msg2], &[pk1, pk2]) {
                 assert!(res)
+            } else {
+                assert!(false)
             }
         } else {
             assert!(false)
@@ -131,12 +180,12 @@ mod tests {
         let sk = SecretKey::new();
         let msg = b"Rip and tear, until it's done";
         let sig = sk.sign(msg);
-        assert!(sig.validate())
+        assert!(sig.is_valid())
     }
 
     #[test]
     #[should_panic]
-    fn invalid_msg_agg_sig() {
+    fn invalid_msg_agg() {
         let sk1 = SecretKey::new();
         let pk1 = sk1.public_key();
         let sk2 = SecretKey::new();
@@ -151,9 +200,11 @@ mod tests {
         let sig2 = sk2.sign(msg2);
 
         if let Ok(agg_sig) = aggregate(&[sig1, sig2]) {
-            // Signature is over msg2 but msg3 is being checked
+            // sig2 is over msg2 not msg3, expect test to fail
             if let Ok(res) = verify_messages(&agg_sig, &[msg1, msg3], &[pk1, pk2]) {
                 assert!(res)
+            } else {
+                assert!(false)
             }
         } else {
             assert!(false)
@@ -162,7 +213,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn invalid_sig_agg_sig() {
+    fn invalid_sig_agg() {
         let sk1 = SecretKey::new();
         let pk1 = sk1.public_key();
         let sk2 = SecretKey::new();
@@ -174,12 +225,68 @@ mod tests {
         let msg3 = b"Nooooooo";
 
         let sig1 = sk1.sign(msg1);
-        let sig2 = sk2.sign(msg3);
+        let sig3 = sk2.sign(msg3);
 
-        if let Ok(agg_sig) = aggregate(&[sig1, sig2]) {
-            // Signature is over msg3, but msg2 is being checked
+        // Signature is over msg3, but msg2 is being checked
+        if let Ok(agg_sig) = aggregate(&[sig1, sig3]) {
             if let Ok(res) = verify_messages(&agg_sig, &[msg1, msg2], &[pk1, pk2]) {
                 assert!(res)
+            } else {
+                assert!(false)
+            }
+        } else {
+            assert!(false)
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid_pubkey_agg() {
+        let sk1 = SecretKey::new();
+        let pk1 = sk1.public_key();
+        let sk2 = SecretKey::new();
+        let _pk2 = sk2.public_key();
+        let sk3 = SecretKey::new();
+        let pk3 = sk3.public_key();
+
+        let msg1 = b"Rip and tear";
+        let msg2 = b"till is done";
+
+        let sig1 = sk1.sign(msg1);
+        let sig2 = sk2.sign(msg2);
+
+        if let Ok(agg_sig) = aggregate(&[sig1, sig2]) {
+            // pk3 is not for msg2, expect test to fail
+            if let Ok(res) = verify_messages(&agg_sig, &[msg1, msg2], &[pk1, pk3]) {
+                assert!(res)
+            } else {
+                assert!(false)
+            }
+        } else {
+            assert!(false)
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn missing_pubkey_agg() {
+        let sk1 = SecretKey::new();
+        let pk1 = sk1.public_key();
+        let sk2 = SecretKey::new();
+        let _pk2 = sk2.public_key();
+
+        let msg1 = b"Rip and tear";
+        let msg2 = b"till is done";
+
+        let sig1 = sk1.sign(msg1);
+        let sig2 = sk2.sign(msg2);
+
+        if let Ok(agg_sig) = aggregate(&[sig1, sig2]) {
+            // pk2 is missing, expect test to fail
+            if let Ok(res) = verify_messages(&agg_sig, &[msg1, msg2], &[pk1]) {
+                assert!(res)
+            } else {
+                assert!(false)
             }
         } else {
             assert!(false)

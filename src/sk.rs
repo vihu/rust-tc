@@ -1,6 +1,7 @@
+use crate::ciphertext::Ciphertext;
 use crate::pk::PublicKey;
 use crate::sig::Signature;
-use crate::util::hash_g2;
+use crate::util::{hash_g2, xor_with_hash};
 use bls12_381::{G1Affine, G2Affine, Scalar};
 use rand::distributions::Standard;
 use rand::prelude::*;
@@ -12,7 +13,7 @@ use std::fmt;
 // - impl Zeroize for SecretKey
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct SecretKey(Scalar);
+pub struct SecretKey(pub Scalar); // XXX: Figure out how not to make Scalar pub
 
 impl fmt::Display for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -30,7 +31,11 @@ impl SecretKey {
     /// Use this!
     pub fn new() -> Self {
         let rng = thread_rng();
-        SecretKey::random(rng)
+        SecretKey::from_rngcore(rng)
+    }
+
+    pub fn random() -> Self {
+        SecretKey::new()
     }
 
     /// Returns the matching public key.
@@ -46,6 +51,15 @@ impl SecretKey {
 
     pub fn default() -> Self {
         SecretKey::from_scalar(Scalar::zero())
+    }
+
+    pub fn decrypt(&self, ct: &Ciphertext) -> Option<Vec<u8>> {
+        if !ct.verify() {
+            return None;
+        }
+        let Ciphertext(ref u, ref v, _) = *ct;
+        let g = G1Affine::from(u * self.0);
+        Some(xor_with_hash(g, v))
     }
 
     pub fn from_rng<R: Rng + ?Sized>(rng: &mut R) -> Self {
@@ -64,7 +78,7 @@ impl SecretKey {
     }
 
     /// XXX: Don't use this either
-    pub fn random(rng: impl RngCore) -> Self {
+    pub fn from_rngcore(rng: impl RngCore) -> Self {
         use ff::Field;
         SecretKey(Scalar::random(rng))
     }
