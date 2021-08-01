@@ -133,4 +133,56 @@ mod tests {
         let sig = sk.sign(msg);
         assert!(sig.validate())
     }
+
+    #[test]
+    #[should_panic]
+    fn invalid_msg_agg_sig() {
+        let sk1 = SecretKey::new();
+        let pk1 = sk1.public_key();
+        let sk2 = SecretKey::new();
+        let pk2 = sk2.public_key();
+
+        let msg1 = b"Rip and tear";
+        let msg2 = b"till is done";
+
+        let msg3 = b"Nooooooo";
+
+        let sig1 = sk1.sign(msg1);
+        let sig2 = sk2.sign(msg2);
+
+        if let Ok(agg_sig) = aggregate(&[sig1, sig2]) {
+            // Signature is over msg2 but msg3 is being checked
+            if let Ok(res) = verify_messages(&agg_sig, &[msg1, msg3], &[pk1, pk2]) {
+                assert!(res)
+            }
+        } else {
+            assert!(false)
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid_sig_agg_sig() {
+        let sk1 = SecretKey::new();
+        let pk1 = sk1.public_key();
+        let sk2 = SecretKey::new();
+        let pk2 = sk2.public_key();
+
+        let msg1 = b"Rip and tear";
+        let msg2 = b"till is done";
+
+        let msg3 = b"Nooooooo";
+
+        let sig1 = sk1.sign(msg1);
+        let sig2 = sk2.sign(msg3);
+
+        if let Ok(agg_sig) = aggregate(&[sig1, sig2]) {
+            // Signature is over msg3, but msg2 is being checked
+            if let Ok(res) = verify_messages(&agg_sig, &[msg1, msg2], &[pk1, pk2]) {
+                assert!(res)
+            }
+        } else {
+            assert!(false)
+        }
+    }
 }
