@@ -1,12 +1,13 @@
 use crate::ciphertext::Ciphertext;
 use crate::pk::PublicKey;
 use crate::sig::Signature;
-use crate::util::{hash_g2, xor_with_hash};
+use crate::util::{clear_scalar, hash_g2, xor_with_hash};
 use bls12_381::{G1Affine, G2Affine, Scalar};
 use rand::distributions::Standard;
 use rand::prelude::*;
 use rand::{thread_rng, RngCore};
 use std::fmt;
+use zeroize::Zeroize;
 
 // TODO:
 // - impl Drop for SecretKey
@@ -27,6 +28,18 @@ impl Distribution<SecretKey> for Standard {
     }
 }
 
+impl Zeroize for SecretKey {
+    fn zeroize(&mut self) {
+        clear_scalar(&mut self.0)
+    }
+}
+
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        self.zeroize();
+    }
+}
+
 impl SecretKey {
     /// Use this!
     pub fn new() -> Self {
@@ -36,6 +49,12 @@ impl SecretKey {
 
     pub fn random() -> Self {
         SecretKey::new()
+    }
+
+    pub fn from_mut(scalar: &mut Scalar) -> Self {
+        let sk = SecretKey(*scalar);
+        clear_scalar(scalar);
+        sk
     }
 
     /// Returns the matching public key.
@@ -95,11 +114,11 @@ mod tests {
     use bls12_381::Scalar;
     use rand::distributions::Standard;
     use rand::{thread_rng, Rng};
+    use zeroize::Zeroize;
 
     #[test]
     fn random() {
         let sk = SecretKey::new();
-        assert_ne!(SecretKey::from_scalar(Scalar::zero()), sk);
         let pk = sk.public_key();
         let msg = b"Rip and tear, until it's done";
         let sig = sk.sign(msg);
@@ -125,5 +144,16 @@ mod tests {
         let msg = b"Rip and tear, until it's done";
         let sig = sk.sign(msg);
         assert!(pk.verify(&sig, msg));
+    }
+
+    #[test]
+    fn test_zeroize() {
+        let zero_sk = SecretKey::from_mut(&mut Scalar::zero());
+
+        let mut sk = SecretKey::random();
+        assert_ne!(zero_sk, sk);
+
+        sk.zeroize();
+        assert_eq!(zero_sk, sk);
     }
 }

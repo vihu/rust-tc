@@ -1,9 +1,11 @@
+use bls12_381::Scalar;
 use bls12_381::{G1Affine, G2Affine, G2Projective};
 use group::Group;
 use rand::distributions::Standard;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use tiny_keccak::{Hasher, Sha3};
+use zeroize::Zeroize;
 
 /// Fancy new sha3
 pub fn sha3_256(data: &[u8]) -> [u8; 32] {
@@ -39,4 +41,34 @@ pub fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1Affine, msg: M) -> G2Affine {
     };
     msg.extend(g1.to_compressed().as_ref());
     hash_g2(&msg)
+}
+
+/// Overwrites a single field element with zeros.
+pub fn clear_scalar(scalar: &mut Scalar) {
+    type Repr = [u64; 4];
+
+    // TODO: Remove this after pairing support `Zeroize`
+    let fr_repr = unsafe { &mut *(scalar as *mut Scalar as *mut Repr) };
+    fr_repr[0].zeroize();
+    fr_repr[1].zeroize();
+    fr_repr[2].zeroize();
+    fr_repr[3].zeroize();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ff::Field;
+    use rand::thread_rng;
+
+    #[test]
+    fn test_clear() {
+        let mut rng = thread_rng();
+
+        let mut scalar: Scalar = Scalar::random(&mut rng);
+        assert_ne!(scalar, Scalar::zero());
+
+        clear_scalar(&mut scalar);
+        assert_eq!(scalar, Scalar::zero());
+    }
 }

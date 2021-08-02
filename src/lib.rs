@@ -2,7 +2,9 @@
 #![allow(unused_imports)]
 
 mod ciphertext;
+mod into_scalar;
 mod pk;
+mod poly;
 mod sig;
 mod sk;
 mod util;
@@ -16,6 +18,7 @@ pub use ciphertext::Ciphertext;
 pub use dec_share::DecryptionShare;
 pub use pk::PublicKey;
 pub use pk_share::PublicKeyShare;
+pub use poly::Poly;
 pub use sig::Signature;
 pub use sig_share::SignatureShare;
 pub use sk::SecretKey;
