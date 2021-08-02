@@ -3,7 +3,7 @@ use crate::dec_share::DecryptionShare;
 use crate::pk_share::PublicKeyShare;
 use crate::sig_share::SignatureShare;
 use crate::sk::SecretKey;
-use bls12_381::G1Affine;
+use bls12_381::{G1Affine, Scalar};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SecretKeyShare(SecretKey);
@@ -32,5 +32,9 @@ impl SecretKeyShare {
             return None;
         }
         Some(DecryptionShare(G1Affine::from(ct.0 * ((self.0).0))))
+    }
+
+    pub fn from_mut(scalar: &mut Scalar) -> Self {
+        SecretKeyShare(SecretKey::from_mut(scalar))
     }
 }

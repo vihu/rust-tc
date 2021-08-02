@@ -4,7 +4,6 @@
 mod ciphertext;
 mod into_scalar;
 mod pk;
-mod poly;
 mod sig;
 mod sk;
 mod util;
@@ -14,7 +13,13 @@ mod pk_share;
 mod sig_share;
 mod sk_share;
 
+mod commitment;
+mod pk_set;
+mod poly;
+mod sk_set;
+
 pub use ciphertext::Ciphertext;
+pub use commitment::Commitment;
 pub use dec_share::DecryptionShare;
 pub use pk::PublicKey;
 pub use pk_share::PublicKeyShare;

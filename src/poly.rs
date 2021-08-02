@@ -1,7 +1,8 @@
+use crate::commitment::Commitment;
 use crate::into_scalar::IntoScalar;
 use crate::util::clear_scalar;
 use anyhow::{bail, Result};
-use bls12_381::Scalar;
+use bls12_381::{G1Affine, Scalar};
 use ff::Field;
 use rand::Rng;
 use rand_core::RngCore;
@@ -146,6 +147,14 @@ impl Poly {
             base *= Poly::from(vec![minus_x, Scalar::one()]);
         }
         poly
+    }
+
+    /// Returns the corresponding commitment.
+    pub fn commitment(&self) -> Commitment {
+        let to_g1 = |c: &Scalar| G1Affine::from(G1Affine::generator().mul(*c));
+        Commitment {
+            coeff: self.coeff.iter().map(to_g1).collect(),
+        }
     }
 }
 

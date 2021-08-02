@@ -1,9 +1,13 @@
+use crate::into_scalar::IntoScalar;
 use bls12_381::Scalar;
 use bls12_381::{G1Affine, G2Affine, G2Projective};
 use group::Group;
 use rand::distributions::Standard;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
+use std::borrow::Borrow;
+use std::cmp::Ordering;
+use std::ops::{AddAssign, Mul};
 use tiny_keccak::{Hasher, Sha3};
 use zeroize::Zeroize;
 
@@ -71,4 +75,17 @@ mod tests {
         clear_scalar(&mut scalar);
         assert_eq!(scalar, Scalar::zero());
     }
+}
+
+/// Compares two curve elements and returns their `Ordering`.
+pub fn cmp_g1_affine(x: &G1Affine, y: &G1Affine) -> Ordering {
+    let xc = x.to_compressed();
+    let yc = y.to_compressed();
+    xc.as_ref().cmp(yc.as_ref())
+}
+
+pub fn into_scalar_plus_1<I: IntoScalar>(x: I) -> Scalar {
+    let mut result = Scalar::one();
+    result += &x.into_scalar();
+    result
 }
