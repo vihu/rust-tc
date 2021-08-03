@@ -72,15 +72,22 @@ impl Poly {
         Poly::from(coeff)
     }
 
-    pub fn random(degree: usize) -> Self {
-        let coeff: Vec<Scalar> = iter::repeat_with(|| {
-            let rng = rand::thread_rng();
-            Scalar::random(rng)
-        })
-        .take(degree + 1)
-        .collect();
+    pub fn random<R: RngCore>(degree: usize, rng: &mut R) -> Self {
+        Poly::try_random(degree, rng)
+            .unwrap_or_else(|e| panic!("Failed to create random `Poly`: {}", e))
+    }
 
-        Poly::from(coeff)
+    /// Creates a random polynomial. This constructor is identical to the `Poly::random()`
+    /// constructor in every way except that this constructor will return an `Err` where
+    /// `try_random` would return an error.
+    pub fn try_random<R: RngCore>(degree: usize, mut rng: &mut R) -> Result<Self> {
+        if degree == usize::max_value() {
+            bail!("degree too high!")
+        }
+        let coeff: Vec<Scalar> = iter::repeat_with(|| Scalar::random(&mut rng))
+            .take(degree + 1)
+            .collect();
+        Ok(Poly::from(coeff))
     }
 
     /// Removes all trailing zero coefficients.
@@ -364,7 +371,8 @@ mod tests {
     #[test]
     fn rand_degree() {
         let deg = 2;
-        let p = Poly::random(deg);
+        let mut rng = thread_rng();
+        let p = Poly::random(deg, &mut rng);
         assert_eq!(deg, p.degree())
     }
 

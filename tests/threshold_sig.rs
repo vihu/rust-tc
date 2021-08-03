@@ -41,7 +41,8 @@ impl ChatNetwork {
     // `threshold` - a message must have `threshold + 1` validator signatures
     // before it can be added to the `chat_log`.
     fn new(n_nodes: usize, threshold: usize) -> Self {
-        let sk_set = SecretKeySet::random(threshold);
+        let mut rng = rand::thread_rng();
+        let sk_set = SecretKeySet::random(threshold, &mut rng);
         let pk_set = sk_set.public_keys();
 
         let nodes = (0..n_nodes)

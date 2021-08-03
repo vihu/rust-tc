@@ -23,7 +23,8 @@ impl SecretSociety {
     // `threshold` - the number of actors that must collaborate to successfully
     // decrypt a message must exceed this `threshold`.
     fn new(n_actors: usize, threshold: usize) -> Self {
-        let sk_set = SecretKeySet::random(threshold);
+        let mut rng = rand::thread_rng();
+        let sk_set = SecretKeySet::random(threshold, &mut rng);
         let pk_set = sk_set.public_keys();
 
         let actors = (0..n_actors)

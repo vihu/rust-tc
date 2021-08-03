@@ -74,14 +74,14 @@ mod tests {
 
     #[test]
     fn valid() {
-        let sk = SecretKey::new();
+        let sk = SecretKey::random();
         let pk = sk.public_key();
         assert!(pk.is_valid())
     }
 
     #[test]
     fn enc_dec() {
-        let sk = SecretKey::new();
+        let sk = SecretKey::random();
         let pk = sk.public_key();
         let msg = b"Rip and tear, until it's done";
         let encrypted = pk.encrypt(msg);
@@ -96,8 +96,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn other_sk_enc_dec() {
-        let sk = SecretKey::new();
-        let other_sk = SecretKey::new();
+        let sk = SecretKey::random();
+        let other_sk = SecretKey::random();
         let pk = sk.public_key();
         let msg = b"Rip and tear, until it's done";
         let encrypted = pk.encrypt(msg);
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn other_msg_enc_dec() {
-        let sk = SecretKey::new();
+        let sk = SecretKey::random();
         let pk = sk.public_key();
         let msg = b"Rip and tear, until it's done";
         let other_msg = b"Don't Rip and tear, until it's done";

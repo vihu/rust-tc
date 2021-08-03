@@ -2,6 +2,7 @@ use crate::util::into_scalar_plus_1;
 use crate::{IntoScalar, Poly, PublicKeySet, SecretKey, SecretKeyShare};
 use anyhow::Result;
 use rand::Rng;
+use rand_core::RngCore;
 
 /// A secret key and an associated set of secret key shares.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -25,8 +26,16 @@ impl SecretKeySet {
     /// # Panic
     ///
     /// Panics if the `threshold` is too large for the coefficients to fit into a `Vec`.
-    pub fn random(threshold: usize) -> Self {
-        SecretKeySet::from(Poly::random(threshold))
+    pub fn random<R: Rng>(threshold: usize, rng: &mut R) -> Self {
+        SecretKeySet::try_random(threshold, rng)
+            .unwrap_or_else(|e| panic!("Failed to create random `SecretKeySet`: {}", e))
+    }
+
+    /// Creates a set of secret key shares, where any `threshold + 1` of them can collaboratively
+    /// sign and decrypt. This constructor is identical to the `SecretKeySet::random()` in every
+    /// way except that this constructor returns an `Err` where the `random` would panic.
+    pub fn try_random<R: Rng>(threshold: usize, rng: &mut R) -> Result<Self> {
+        Poly::try_random(threshold, rng).map(SecretKeySet::from)
     }
 
     /// Returns the threshold `t`: any set of `t + 1` signature shares can be combined into a full

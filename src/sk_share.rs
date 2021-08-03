@@ -10,7 +10,7 @@ impl SecretKeyShare {
     }
 
     pub fn new() -> Self {
-        SecretKeyShare(SecretKey::new())
+        SecretKeyShare(SecretKey::random())
     }
 
     pub fn public_key_share(&self) -> PublicKeyShare {

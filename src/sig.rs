@@ -153,9 +153,9 @@ mod tests {
 
     #[test]
     fn verify_agg() {
-        let sk1 = SecretKey::new();
+        let sk1 = SecretKey::random();
         let pk1 = sk1.public_key();
-        let sk2 = SecretKey::new();
+        let sk2 = SecretKey::random();
         let pk2 = sk2.public_key();
 
         let msg1 = b"Rip and tear";
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn valid() {
-        let sk = SecretKey::new();
+        let sk = SecretKey::random();
         let msg = b"Rip and tear, until it's done";
         let sig = sk.sign(msg);
         assert!(sig.is_valid())
@@ -186,9 +186,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn invalid_msg_agg() {
-        let sk1 = SecretKey::new();
+        let sk1 = SecretKey::random();
         let pk1 = sk1.public_key();
-        let sk2 = SecretKey::new();
+        let sk2 = SecretKey::random();
         let pk2 = sk2.public_key();
 
         let msg1 = b"Rip and tear";
@@ -214,9 +214,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn invalid_sig_agg() {
-        let sk1 = SecretKey::new();
+        let sk1 = SecretKey::random();
         let pk1 = sk1.public_key();
-        let sk2 = SecretKey::new();
+        let sk2 = SecretKey::random();
         let pk2 = sk2.public_key();
 
         let msg1 = b"Rip and tear";
@@ -242,11 +242,11 @@ mod tests {
     #[test]
     #[should_panic]
     fn invalid_pubkey_agg() {
-        let sk1 = SecretKey::new();
+        let sk1 = SecretKey::random();
         let pk1 = sk1.public_key();
-        let sk2 = SecretKey::new();
+        let sk2 = SecretKey::random();
         let _pk2 = sk2.public_key();
-        let sk3 = SecretKey::new();
+        let sk3 = SecretKey::random();
         let pk3 = sk3.public_key();
 
         let msg1 = b"Rip and tear";
@@ -270,9 +270,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn missing_pubkey_agg() {
-        let sk1 = SecretKey::new();
+        let sk1 = SecretKey::random();
         let pk1 = sk1.public_key();
-        let sk2 = SecretKey::new();
+        let sk2 = SecretKey::random();
         let _pk2 = sk2.public_key();
 
         let msg1 = b"Rip and tear";

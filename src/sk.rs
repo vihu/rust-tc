@@ -1,6 +1,7 @@
 use crate::util::{clear_scalar, hash_g2, xor_with_hash};
 use crate::{Ciphertext, PublicKey, Signature};
 use bls12_381::{G1Affine, G2Affine, Scalar};
+use ff::Field;
 use rand::distributions::Standard;
 use rand::prelude::*;
 use rand::{thread_rng, RngCore};
@@ -18,7 +19,7 @@ impl fmt::Display for SecretKey {
 
 impl Distribution<SecretKey> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> SecretKey {
-        SecretKey::from_rng(rng)
+        SecretKey(Scalar::random(rng))
     }
 }
 
@@ -35,16 +36,6 @@ impl Drop for SecretKey {
 }
 
 impl SecretKey {
-    /// Use this!
-    pub fn new() -> Self {
-        let rng = thread_rng();
-        SecretKey::from_rngcore(rng)
-    }
-
-    pub fn random() -> Self {
-        SecretKey::new()
-    }
-
     pub fn from_mut(scalar: &mut Scalar) -> Self {
         let sk = SecretKey(*scalar);
         clear_scalar(scalar);
@@ -75,9 +66,8 @@ impl SecretKey {
         Some(xor_with_hash(g, v))
     }
 
-    pub fn from_rng<R: Rng + ?Sized>(rng: &mut R) -> Self {
-        use ff::Field;
-        SecretKey(Scalar::random(rng))
+    pub fn random() -> Self {
+        rand::random()
     }
 
     /// XXX: Don't use this
@@ -112,7 +102,7 @@ mod tests {
 
     #[test]
     fn random() {
-        let sk = SecretKey::new();
+        let sk = SecretKey::random();
         let pk = sk.public_key();
         let msg = b"Rip and tear, until it's done";
         let sig = sk.sign(msg);
