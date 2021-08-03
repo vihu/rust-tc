@@ -18,3 +18,7 @@ Simple threshold cryptography over BLS12-381 curve.
     // verify the msg signature using public key
     assert!(pk.verify(&sig, msg))
 ```
+
+#### Credits
+
+The original [threshold_crypto](https://github.com/poanetwork/threshold_crypto) was written by poanetwork which is now not under active development.
