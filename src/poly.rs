@@ -1,7 +1,7 @@
-use crate::util::clear_scalar;
+use crate::util::{clear_scalar, coeff_pos};
 use crate::{Commitment, IntoScalar};
 use anyhow::{bail, Result};
-use bls12_381::{G1Affine, Scalar};
+use bls12_381::{G1Affine, G1Projective, Scalar};
 use ff::Field;
 use rand::Rng;
 use rand_core::RngCore;
@@ -98,8 +98,8 @@ impl Poly {
         };
         let x = i.into_scalar();
         for c in self.coeff.iter().rev().skip(1) {
-            result.mul_assign(&x);
-            result.add_assign(c);
+            result *= &x;
+            result += c;
         }
         result
     }
@@ -150,7 +150,7 @@ impl Poly {
 
     /// Returns the corresponding commitment.
     pub fn commitment(&self) -> Commitment {
-        let to_g1 = |c: &Scalar| G1Affine::from(G1Affine::generator().mul(*c));
+        let to_g1 = |c: &Scalar| G1Affine::from(G1Projective::generator() * (*c));
         Commitment {
             coeff: self.coeff.iter().map(to_g1).collect(),
         }
@@ -353,15 +353,6 @@ impl Mul<u64> for Poly {
     fn mul(self, rhs: u64) -> Self::Output {
         self * rhs.into_scalar()
     }
-}
-
-/// Returns the position of coefficient `(i, j)` in the vector describing a symmetric bivariate
-/// polynomial. If `i` or `j` are too large to represent the position as a `usize`, `None` is
-/// returned.
-pub(crate) fn coeff_pos(i: usize, j: usize) -> Option<usize> {
-    // Since the polynomial is symmetric, we can order such that `j >= i`.
-    let (j, i) = if j >= i { (j, i) } else { (i, j) };
-    i.checked_add(j.checked_mul(j.checked_add(1)?)? / 2)
 }
 
 #[cfg(test)]

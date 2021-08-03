@@ -7,6 +7,7 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
+use std::iter::once;
 use std::ops::{AddAssign, Mul};
 use tiny_keccak::{Hasher, Sha3};
 use zeroize::Zeroize;
@@ -88,4 +89,25 @@ pub fn into_scalar_plus_1<I: IntoScalar>(x: I) -> Scalar {
     let mut result = Scalar::one();
     result += &x.into_scalar();
     result
+}
+
+/// Returns the position of coefficient `(i, j)` in the vector describing a symmetric bivariate
+/// polynomial. If `i` or `j` are too large to represent the position as a `usize`, `None` is
+/// returned.
+pub fn coeff_pos(i: usize, j: usize) -> Option<usize> {
+    // Since the polynomial is symmetric, we can order such that `j >= i`.
+    let (j, i) = if j >= i { (j, i) } else { (i, j) };
+    i.checked_add(j.checked_mul(j.checked_add(1)?)? / 2)
+}
+
+/// Returns the `0`-th to `degree`-th power of `x`.
+pub fn powers<T: IntoScalar>(into_x: T, degree: usize) -> Vec<Scalar> {
+    let x = into_x.into_scalar();
+    let mut x_pow_i = Scalar::one();
+    once(x_pow_i)
+        .chain((0..degree).map(|_| {
+            x_pow_i *= &x;
+            x_pow_i
+        }))
+        .collect()
 }

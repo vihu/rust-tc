@@ -13,11 +13,15 @@ mod pk_share;
 mod sig_share;
 mod sk_share;
 
+mod bicommitment;
+mod bipoly;
 mod commitment;
 mod pk_set;
 mod poly;
 mod sk_set;
 
+pub use bicommitment::BivarCommitment;
+pub use bipoly::BivarPoly;
 pub use ciphertext::Ciphertext;
 pub use commitment::Commitment;
 pub use dec_share::DecryptionShare;

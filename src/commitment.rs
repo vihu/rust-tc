@@ -45,12 +45,13 @@ impl Hash for Commitment {
 impl<B: Borrow<Commitment>> AddAssign<B> for Commitment {
     fn add_assign(&mut self, rhs: B) {
         let len = cmp::max(self.coeff.len(), rhs.borrow().coeff.len());
-        self.coeff.resize(len, G1Affine::generator());
-        for (self_c, rhs_c) in self.coeff.iter_mut().zip(&rhs.borrow().coeff) {
-            let mut tmp = G1Projective::from(*self_c);
-            tmp += rhs_c
+        self.coeff.resize(len, G1Affine::identity());
+        let mut new_coeffs: Vec<G1Affine> = vec![];
+        for (self_c, rhs_c) in self.coeff.iter().zip(&rhs.borrow().coeff) {
+            new_coeffs.push(G1Affine::from(*self_c + G1Projective::from(*rhs_c)))
         }
-        self.remove_zeros();
+        *self = Commitment { coeff: new_coeffs };
+        self.remove_zeros()
     }
 }
 
