@@ -1,17 +1,11 @@
-use crate::ciphertext::Ciphertext;
-use crate::pk::PublicKey;
-use crate::sig::Signature;
 use crate::util::{clear_scalar, hash_g2, xor_with_hash};
+use crate::{Ciphertext, PublicKey, Signature};
 use bls12_381::{G1Affine, G2Affine, Scalar};
 use rand::distributions::Standard;
 use rand::prelude::*;
 use rand::{thread_rng, RngCore};
 use std::fmt;
 use zeroize::Zeroize;
-
-// TODO:
-// - impl Drop for SecretKey
-// - impl Zeroize for SecretKey
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct SecretKey(pub Scalar); // XXX: Figure out how not to make Scalar pub

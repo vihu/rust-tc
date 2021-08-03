@@ -1,6 +1,5 @@
-use crate::commitment::Commitment;
-use crate::into_scalar::IntoScalar;
 use crate::util::clear_scalar;
+use crate::{Commitment, IntoScalar};
 use anyhow::{bail, Result};
 use bls12_381::{G1Affine, Scalar};
 use ff::Field;

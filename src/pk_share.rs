@@ -1,10 +1,6 @@
-use bls12_381::{pairing, G1Affine, G1Projective};
-
-use crate::ciphertext::Ciphertext;
-use crate::dec_share::DecryptionShare;
-use crate::pk::PublicKey;
-use crate::sig_share::SignatureShare;
 use crate::util::hash_g1_g2;
+use crate::{Ciphertext, DecryptionShare, PublicKey, SignatureShare};
+use bls12_381::{pairing, G1Affine, G1Projective};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct PublicKeyShare(pub PublicKey);

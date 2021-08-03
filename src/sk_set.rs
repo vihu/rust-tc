@@ -1,14 +1,10 @@
-use crate::into_scalar::IntoScalar;
-use crate::pk_set::PublicKeySet;
-use crate::poly::Poly;
-use crate::sk::SecretKey;
-use crate::sk_share::SecretKeyShare;
 use crate::util::into_scalar_plus_1;
+use crate::{IntoScalar, Poly, PublicKeySet, SecretKey, SecretKeyShare};
 use anyhow::Result;
 use rand::Rng;
 
 /// A secret key and an associated set of secret key shares.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SecretKeySet {
     /// The coefficients of a polynomial whose value at `0` is the "master key", and value at
     /// `i + 1` is key share number `i`.

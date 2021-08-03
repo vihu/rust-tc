@@ -2,7 +2,7 @@ use crate::util;
 use bls12_381::{pairing, G1Affine, G2Affine};
 
 /// An encrypted message.
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Ciphertext(pub G1Affine, pub Vec<u8>, pub G2Affine);
 
 impl Ciphertext {

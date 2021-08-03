@@ -1,6 +1,5 @@
-use crate::into_scalar::IntoScalar;
-use crate::pk::PublicKey;
 use crate::util::cmp_g1_affine;
+use crate::{IntoScalar, PublicKey};
 use bls12_381::{G1Affine, G1Projective};
 use std::borrow::Borrow;
 use std::cmp;
@@ -113,5 +112,28 @@ impl Commitment {
             pub_key += G1Projective::from(self.coeff[i]);
         }
         PublicKey(G1Affine::from(pub_key))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::{Poly, PublicKeySet, SecretKeySet};
+
+    #[test]
+    fn basic() {
+        // p1 = 5 X³ + X - 2.
+        let x_pow_3 = Poly::monomial(3);
+        let x_pow_1 = Poly::monomial(1);
+        let poly = x_pow_3 * 5 + x_pow_1 - 2;
+
+        let sks = SecretKeySet::from(poly.clone());
+
+        let c = poly.commitment();
+
+        let pks = PublicKeySet::from(c);
+
+        assert_eq!(pks, sks.public_keys())
     }
 }

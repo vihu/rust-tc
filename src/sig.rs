@@ -12,7 +12,7 @@ use std::ops::{AddAssign, Mul};
 
 const SIGSIZE: usize = 96;
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Copy)]
 pub struct Signature(pub G2Affine);
 
 impl Signature {
