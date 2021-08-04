@@ -4,6 +4,7 @@ use bls12_381::{
     multi_miller_loop, pairing, G1Affine, G2Affine, G2Prepared, G2Projective, Gt, MillerLoopResult,
     Scalar,
 };
+use group::Curve;
 use serde::de::{self, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 use std::convert::TryInto;
@@ -13,11 +14,11 @@ use std::ops::{AddAssign, Mul};
 const SIGSIZE: usize = 96;
 
 #[derive(Clone, PartialEq, Eq, Debug, Copy)]
-pub struct Signature(pub G2Affine);
+pub struct Signature(pub G2Projective);
 
 impl Signature {
     pub fn is_valid(&self) -> bool {
-        self.0.to_compressed().len() == SIGSIZE
+        self.0.to_affine().to_compressed().len() == SIGSIZE
     }
 }
 
@@ -26,7 +27,7 @@ impl Serialize for Signature {
     where
         S: Serializer,
     {
-        serializer.serialize_bytes(&self.0.to_compressed())
+        serializer.serialize_bytes(&self.0.to_affine().to_compressed())
     }
 }
 
@@ -47,9 +48,9 @@ impl<'de> Visitor<'de> for SigVisitor {
     where
         E: de::Error,
     {
-        Ok(Signature(
+        Ok(Signature(G2Projective::from(
             G2Affine::from_compressed(coerce_size(v)).unwrap(),
-        ))
+        )))
     }
 }
 
@@ -79,12 +80,12 @@ pub fn aggregate(sigs: &[Signature]) -> Result<Signature> {
         aggregate.add_assign(&next.0)
     }
 
-    Ok(Signature(G2Affine::from(aggregate)))
+    Ok(Signature(aggregate))
 }
 
 pub fn core_aggregate_verify(
     signature: &Signature,
-    hashes: &[G2Affine],
+    hashes: &[G2Projective],
     public_keys: &[PublicKey],
 ) -> Result<bool> {
     // Either public_keys or hashes is empty, bail
@@ -117,8 +118,8 @@ pub fn core_aggregate_verify(
         .iter()
         .zip(hashes.iter())
         .map(|(pk, h)| {
-            let pk = pk.0;
-            let h = G2Prepared::from(*h);
+            let pk = G1Affine::from(pk.0);
+            let h = G2Prepared::from(G2Affine::from(*h));
             multi_miller_loop(&[(&pk, &h)])
         })
         .fold(MillerLoopResult::default(), |mut acc, cur| {
@@ -127,7 +128,7 @@ pub fn core_aggregate_verify(
         })
         .final_exponentiation();
 
-    let c2: Gt = pairing(&G1Affine::generator(), &signature.0);
+    let c2: Gt = pairing(&G1Affine::generator(), &G2Affine::from(signature.0));
 
     Ok(c1 == c2)
 }

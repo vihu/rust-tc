@@ -157,7 +157,7 @@ impl Poly {
 
     /// Returns the corresponding commitment.
     pub fn commitment(&self) -> Commitment {
-        let to_g1 = |c: &Scalar| G1Affine::from(G1Projective::generator() * (*c));
+        let to_g1 = |c: &Scalar| (G1Affine::generator() * c);
         Commitment {
             coeff: self.coeff.iter().map(to_g1).collect(),
         }
@@ -279,8 +279,8 @@ impl<'a, B: Borrow<Poly>> Mul<B> for &'a Poly {
         for (i, ca) in self.coeff.iter().enumerate() {
             for (j, cb) in rhs.coeff.iter().enumerate() {
                 tmp = *ca;
-                tmp.mul_assign(cb);
-                coeffs[i + j].add_assign(&tmp);
+                tmp *= cb;
+                coeffs[i + j] += &tmp;
             }
         }
         clear_scalar(&mut tmp);

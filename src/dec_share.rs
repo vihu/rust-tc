@@ -1,4 +1,4 @@
-use bls12_381::G1Affine;
+use bls12_381::G1Projective;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct DecryptionShare(pub G1Affine);
+pub struct DecryptionShare(pub G1Projective);

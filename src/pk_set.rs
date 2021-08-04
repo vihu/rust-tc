@@ -80,11 +80,11 @@ impl PublicKeySet {
 
 // TODO: Figure out how to combine these two functions
 
-fn decrypt_<B, T, I>(t: usize, items: I) -> Result<G1Affine>
+fn decrypt_<B, T, I>(t: usize, items: I) -> Result<G1Projective>
 where
     I: IntoIterator<Item = (T, B)>,
     T: IntoScalar,
-    B: Borrow<G1Affine>,
+    B: Borrow<G1Projective>,
 {
     let samples: Vec<_> = items
         .into_iter()
@@ -126,14 +126,14 @@ where
         l0 *= &denom.invert().unwrap();
         result += sample.borrow() * l0;
     }
-    Ok(G1Affine::from(result))
+    Ok(result)
 }
 
-fn combine_signatures_<B, T, I>(t: usize, items: I) -> Result<G2Affine>
+fn combine_signatures_<B, T, I>(t: usize, items: I) -> Result<G2Projective>
 where
     I: IntoIterator<Item = (T, B)>,
     T: IntoScalar,
-    B: Borrow<G2Affine>,
+    B: Borrow<G2Projective>,
 {
     let samples: Vec<_> = items
         .into_iter()
@@ -175,5 +175,5 @@ where
         l0 *= &denom.invert().unwrap();
         result += sample.borrow() * l0;
     }
-    Ok(G2Affine::from(result))
+    Ok(result)
 }

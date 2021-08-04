@@ -1,9 +1,9 @@
-use crate::util::cmp_g1_affine;
+use crate::util::cmp_g1_projective;
 use crate::{IntoScalar, PublicKey};
 use bls12_381::{G1Affine, G1Projective};
+use group::Curve;
 use std::borrow::Borrow;
 use std::cmp;
-use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, AddAssign};
 use subtle::Choice;
@@ -12,23 +12,23 @@ use subtle::Choice;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Commitment {
     /// The coefficients of the polynomial.
-    pub coeff: Vec<G1Affine>,
+    pub coeff: Vec<G1Projective>,
 }
 
 impl PartialOrd for Commitment {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         Some(self.cmp(&other))
     }
 }
 
 impl Ord for Commitment {
-    fn cmp(&self, other: &Self) -> Ordering {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.coeff.len().cmp(&other.coeff.len()).then_with(|| {
             self.coeff
                 .iter()
                 .zip(&other.coeff)
                 .find(|(x, y)| x != y)
-                .map_or(Ordering::Equal, |(x, y)| cmp_g1_affine(x, y))
+                .map_or(cmp::Ordering::Equal, |(x, y)| cmp_g1_projective(x, y))
         })
     }
 }
@@ -37,7 +37,7 @@ impl Hash for Commitment {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.coeff.len().hash(state);
         for c in &self.coeff {
-            c.to_compressed().as_ref().hash(state);
+            c.to_affine().to_compressed().as_ref().hash(state);
         }
     }
 }
@@ -45,10 +45,10 @@ impl Hash for Commitment {
 impl<B: Borrow<Commitment>> AddAssign<B> for Commitment {
     fn add_assign(&mut self, rhs: B) {
         let len = cmp::max(self.coeff.len(), rhs.borrow().coeff.len());
-        self.coeff.resize(len, G1Affine::identity());
-        let mut new_coeffs: Vec<G1Affine> = Vec::with_capacity(self.coeff.len());
+        self.coeff.resize(len, G1Projective::identity());
+        let mut new_coeffs: Vec<G1Projective> = Vec::with_capacity(self.coeff.len());
         for (self_c, rhs_c) in self.coeff.iter().zip(&rhs.borrow().coeff) {
-            new_coeffs.push(G1Affine::from(*self_c + G1Projective::from(*rhs_c)))
+            new_coeffs.push(*self_c + G1Projective::from(*rhs_c))
         }
         *self = Commitment { coeff: new_coeffs };
         self.remove_zeros()
@@ -79,9 +79,9 @@ impl Commitment {
     }
 
     /// Returns the `i`-th public key share.
-    pub fn evaluate<T: IntoScalar>(&self, i: T) -> G1Affine {
+    pub fn evaluate<T: IntoScalar>(&self, i: T) -> G1Projective {
         let result = match self.coeff.last() {
-            None => return G1Affine::generator(),
+            None => return G1Projective::generator(),
             Some(c) => *c,
         };
         let x = i.into_scalar();
@@ -90,7 +90,7 @@ impl Commitment {
             res *= x;
             res += c;
         }
-        G1Affine::from(res)
+        res
     }
 
     /// Removes all trailing zero coefficients.
@@ -112,7 +112,7 @@ impl Commitment {
         for i in 1..length {
             pub_key += G1Projective::from(self.coeff[i]);
         }
-        PublicKey(G1Affine::from(pub_key))
+        PublicKey(pub_key)
     }
 }
 

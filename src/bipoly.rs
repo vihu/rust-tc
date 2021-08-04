@@ -1,7 +1,7 @@
 use crate::util::{clear_scalar, coeff_pos, powers};
 use crate::{BivarCommitment, IntoScalar, Poly};
 use anyhow::{bail, Result};
-use bls12_381::{G1Affine, Scalar};
+use bls12_381::{G1Affine, G1Projective, Scalar};
 use ff::Field;
 use rand::Rng;
 use std::iter::repeat_with;
@@ -106,7 +106,7 @@ impl BivarPoly {
 
     /// Returns the corresponding commitment. That information can be shared publicly.
     pub fn commitment(&self) -> BivarCommitment {
-        let to_pub = |c: &Scalar| G1Affine::from(G1Affine::generator() * (*c));
+        let to_pub = |c: &Scalar| (G1Projective::generator() * *c);
         BivarCommitment {
             degree: self.degree,
             coeff: self.coeff.iter().map(to_pub).collect(),
@@ -159,6 +159,6 @@ mod tests {
 
         let mut rng = rand::thread_rng();
         let (x, y): (Scalar, Scalar) = (Scalar::random(&mut rng), Scalar::random(&mut rng));
-        assert_eq!(zero_commitment.evaluate(x, y), G1Affine::identity());
+        assert_eq!(zero_commitment.evaluate(x, y), G1Projective::identity());
     }
 }

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use bls12_381::{G1Affine, G1Projective, Scalar};
+    use bls12_381::{G1Affine, Scalar};
     use rust_tc::{BivarPoly, IntoScalar, Poly};
     use std::collections::BTreeMap;
 
@@ -32,7 +32,7 @@ mod tests {
                 // Node `s` receives the `s`-th value and verifies it.
                 for s in 1..=node_num {
                     let val = row_poly.evaluate(s);
-                    let val_g1 = G1Affine::from(G1Projective::generator() * val);
+                    let val_g1 = G1Affine::generator() * val;
                     assert_eq!(bi_commit.evaluate(m, s), val_g1);
                     // The node can't verify this directly, but it should have the correct value:
                     assert_eq!(bi_poly.evaluate(m, s), val);

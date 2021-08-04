@@ -27,7 +27,7 @@ impl SecretKeyShare {
         if !ct.verify() {
             return None;
         }
-        Some(DecryptionShare(G1Affine::from(ct.0 * ((self.0).0))))
+        Some(DecryptionShare(ct.0 * ((self.0).0)))
     }
 
     pub fn from_mut(scalar: &mut Scalar) -> Self {

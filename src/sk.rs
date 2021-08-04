@@ -2,6 +2,7 @@ use crate::util::{clear_scalar, hash_g2, xor_with_hash};
 use crate::{Ciphertext, PublicKey, Signature};
 use bls12_381::{G1Affine, G2Affine, Scalar};
 use ff::Field;
+use group::Curve;
 use rand::distributions::Standard;
 use rand::prelude::*;
 use rand::{thread_rng, RngCore};
@@ -45,12 +46,12 @@ impl SecretKey {
     /// Returns the matching public key.
     pub fn public_key(&self) -> PublicKey {
         let g = G1Affine::generator();
-        PublicKey(G1Affine::from(g * self.0))
+        PublicKey(g * self.0)
     }
 
     /// Sign given msg using secret key
     pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
-        Signature(G2Affine::from(hash_g2(msg) * self.0))
+        Signature(hash_g2(msg) * self.0)
     }
 
     pub fn default() -> Self {
@@ -62,7 +63,7 @@ impl SecretKey {
             return None;
         }
         let Ciphertext(ref u, ref v, _) = *ct;
-        let g = G1Affine::from(u * self.0);
+        let g = u * self.0;
         Some(xor_with_hash(g, v))
     }
 

@@ -1,9 +1,10 @@
-use crate::util::{cmp_g1_affine, coeff_pos, powers};
+use crate::util::{cmp_g1_projective, coeff_pos, powers};
 use crate::{Commitment, IntoScalar};
 use bls12_381::{G1Affine, G1Projective, Scalar};
+use group::Curve;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
-use std::ops::MulAssign;
+use std::ops::{Add, Mul, MulAssign};
 
 /// A commitment to a symmetric bivariate polynomial.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -11,14 +12,14 @@ pub struct BivarCommitment {
     /// The polynomial's degree in each of the two variables.
     pub(crate) degree: usize,
     /// The commitments to the coefficients.
-    pub(crate) coeff: Vec<G1Affine>,
+    pub(crate) coeff: Vec<G1Projective>,
 }
 
 impl Hash for BivarCommitment {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.degree.hash(state);
         for c in &self.coeff {
-            c.to_compressed().as_ref().hash(state);
+            c.to_affine().to_compressed().as_ref().hash(state);
         }
     }
 }
@@ -36,7 +37,7 @@ impl Ord for BivarCommitment {
                 .iter()
                 .zip(&other.coeff)
                 .find(|(x, y)| x != y)
-                .map_or(Ordering::Equal, |(x, y)| cmp_g1_affine(x, y))
+                .map_or(Ordering::Equal, |(x, y)| cmp_g1_projective(x, y))
         })
     }
 }
@@ -48,7 +49,7 @@ impl BivarCommitment {
     }
 
     /// Returns the commitment's value at the point `(x, y)`.
-    pub fn evaluate<T: IntoScalar>(&self, x: T, y: T) -> G1Affine {
+    pub fn evaluate<T: IntoScalar>(&self, x: T, y: T) -> G1Projective {
         let x_pow = self.powers(x);
         let y_pow = self.powers(y);
         // TODO: Can we save a few multiplication steps here due to the symmetry?
@@ -56,28 +57,28 @@ impl BivarCommitment {
         for (i, x_pow_i) in x_pow.into_iter().enumerate() {
             for (j, y_pow_j) in y_pow.iter().enumerate() {
                 let index = coeff_pos(i, j).expect("polynomial degree too high");
-                let mut summand = G1Projective::from(self.coeff[index]);
-                summand.mul_assign(x_pow_i);
-                summand.mul_assign(*y_pow_j);
-                result = result.add(&summand);
+                let mut summand = self.coeff[index];
+                summand *= &x_pow_i;
+                summand *= y_pow_j;
+                result += &summand;
             }
         }
-        G1Affine::from(result)
+        result
     }
 
     /// Returns the `x`-th row, as a commitment to a univariate polynomial.
     pub fn row<T: IntoScalar>(&self, x: T) -> Commitment {
         let x_pow = self.powers(x);
-        let coeff: Vec<G1Affine> = (0..=self.degree)
+        let coeff: Vec<G1Projective> = (0..=self.degree)
             .map(|i| {
                 let mut result = G1Projective::identity();
                 for (j, x_pow_j) in x_pow.iter().enumerate() {
                     let index = coeff_pos(i, j).expect("polynomial degree too high");
-                    let mut summand = G1Projective::from(self.coeff[index]);
+                    let mut summand = self.coeff[index];
                     summand *= x_pow_j;
                     result += &summand;
                 }
-                G1Affine::from(result)
+                result
             })
             .collect();
         Commitment { coeff }
