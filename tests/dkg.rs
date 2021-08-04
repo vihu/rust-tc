@@ -3,6 +3,7 @@ mod tests {
     use bls12_381::{G1Affine, Scalar};
     use rust_tc::{BivarPoly, IntoScalar, Poly};
     use std::collections::BTreeMap;
+    use std::time::{Duration, Instant};
 
     #[test]
     fn distributed_key_generation() {
@@ -30,6 +31,7 @@ mod tests {
                 let row_commit = bi_commit.row(m);
                 assert_eq!(row_poly.commitment(), row_commit);
                 // Node `s` receives the `s`-th value and verifies it.
+                let start = Instant::now();
                 for s in 1..=node_num {
                     let val = row_poly.evaluate(s);
                     let val_g1 = G1Affine::generator() * val;
@@ -37,6 +39,8 @@ mod tests {
                     // The node can't verify this directly, but it should have the correct value:
                     assert_eq!(bi_poly.evaluate(m, s), val);
                 }
+                let duration = start.elapsed();
+                println!("dkg loop final: {:?}", duration);
 
                 // A cheating dealer who modified the polynomial would be detected.
                 let x_pow_2 = Poly::monomial(2);

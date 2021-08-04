@@ -5,6 +5,7 @@ use group::Curve;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Mul, MulAssign};
+use std::time::{Duration, Instant};
 
 /// A commitment to a symmetric bivariate polynomial.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -50,10 +51,12 @@ impl BivarCommitment {
 
     /// Returns the commitment's value at the point `(x, y)`.
     pub fn evaluate<T: IntoScalar>(&self, x: T, y: T) -> G1Projective {
+        let start = Instant::now();
         let x_pow = self.powers(x);
         let y_pow = self.powers(y);
         // TODO: Can we save a few multiplication steps here due to the symmetry?
         let mut result = G1Projective::identity();
+
         for (i, x_pow_i) in x_pow.into_iter().enumerate() {
             for (j, y_pow_j) in y_pow.iter().enumerate() {
                 let index = coeff_pos(i, j).expect("polynomial degree too high");
@@ -63,6 +66,8 @@ impl BivarCommitment {
                 result += &summand;
             }
         }
+        let duration = start.elapsed();
+        println!("bicommitment eval calc final: {:?}", duration);
         result
     }
 
