@@ -11,7 +11,7 @@ const PKSIZE: usize = 48;
 
 /// A public key.
 #[derive(Copy, Clone, Debug, Eq)]
-pub struct PublicKey(pub G1Projective);
+pub struct PublicKey(pub G1Affine);
 
 impl PublicKey {
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
@@ -21,7 +21,7 @@ impl PublicKey {
     }
 
     pub fn is_valid(&self) -> bool {
-        self.0.to_affine().to_compressed().len() == PKSIZE
+        self.0.to_compressed().len() == PKSIZE
     }
 
     pub fn encrypt<M: AsRef<[u8]>>(&self, msg: M) -> Ciphertext {

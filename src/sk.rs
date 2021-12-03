@@ -46,12 +46,12 @@ impl SecretKey {
     /// Returns the matching public key.
     pub fn public_key(&self) -> PublicKey {
         let g = G1Affine::generator();
-        PublicKey(g * self.0)
+        PublicKey((g * self.0).to_affine())
     }
 
     /// Sign given msg using secret key
     pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
-        Signature(hash_g2(msg) * self.0)
+        Signature((hash_g2(msg) * self.0).to_affine())
     }
 
     pub fn default() -> Self {

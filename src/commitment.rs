@@ -112,7 +112,7 @@ impl Commitment {
         for i in 1..length {
             pub_key += G1Projective::from(self.coeff[i]);
         }
-        PublicKey(pub_key)
+        PublicKey(pub_key.to_affine())
     }
 }
 

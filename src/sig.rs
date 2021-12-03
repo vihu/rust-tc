@@ -14,11 +14,11 @@ use std::ops::{AddAssign, Mul};
 const SIGSIZE: usize = 96;
 
 #[derive(Clone, PartialEq, Eq, Debug, Copy)]
-pub struct Signature(pub G2Projective);
+pub struct Signature(pub G2Affine);
 
 impl Signature {
     pub fn is_valid(&self) -> bool {
-        self.0.to_affine().to_compressed().len() == SIGSIZE
+        self.0.to_compressed().len() == SIGSIZE
     }
 }
 
@@ -27,7 +27,7 @@ impl Serialize for Signature {
     where
         S: Serializer,
     {
-        serializer.serialize_bytes(&self.0.to_affine().to_compressed())
+        serializer.serialize_bytes(&self.0.to_compressed())
     }
 }
 
@@ -48,9 +48,9 @@ impl<'de> Visitor<'de> for SigVisitor {
     where
         E: de::Error,
     {
-        Ok(Signature(G2Projective::from(
+        Ok(Signature(
             G2Affine::from_compressed(coerce_size(v)).unwrap(),
-        )))
+        ))
     }
 }
 
@@ -80,7 +80,7 @@ pub fn aggregate(sigs: &[Signature]) -> Result<Signature> {
         aggregate.add_assign(&next.0)
     }
 
-    Ok(Signature(aggregate))
+    Ok(Signature(aggregate.to_affine()))
 }
 
 pub fn core_aggregate_verify(
@@ -158,7 +158,6 @@ mod tests {
         let pk1 = sk1.public_key();
         let sk2 = SecretKey::random();
         let pk2 = sk2.public_key();
-
         let msg1 = b"Rip and tear";
         let msg2 = b"till is done";
 
@@ -166,6 +165,7 @@ mod tests {
         let sig2 = sk2.sign(msg2);
 
         if let Ok(agg_sig) = aggregate(&[sig1, sig2]) {
+            println!("sig: {:?}", agg_sig);
             if let Ok(res) = verify_messages(&agg_sig, &[msg1, msg2], &[pk1, pk2]) {
                 assert!(res)
             } else {
@@ -177,11 +177,23 @@ mod tests {
     }
 
     #[test]
-    fn valid() {
+    fn is_valid_sig() {
         let sk = SecretKey::random();
         let msg = b"Rip and tear, until it's done";
         let sig = sk.sign(msg);
         assert!(sig.is_valid())
+    }
+
+    #[test]
+    fn sig_serde_roundtrip() {
+        let sk = SecretKey::random();
+        let msg = b"Rip and tear, until it's done";
+        let sig = sk.sign(msg);
+
+        let bin_sig = bincode::serialize(&sig).expect("boom serialize sig");
+        let deser_sig: Signature =
+            bincode::deserialize(&bin_sig).expect("boom deserialize signature");
+        assert_eq!(deser_sig, sig);
     }
 
     #[test]

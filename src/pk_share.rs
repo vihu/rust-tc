@@ -1,6 +1,7 @@
 use crate::util::hash_g1_g2;
 use crate::{Ciphertext, DecryptionShare, PublicKey, SignatureShare};
 use bls12_381::{pairing, G1Affine, G1Projective, G2Affine};
+use group::Curve;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct PublicKeyShare(pub PublicKey);
@@ -18,6 +19,9 @@ impl PublicKeyShare {
     }
 
     pub fn combine(&self, other: &PublicKeyShare) -> PublicKeyShare {
-        PublicKeyShare(PublicKey((self.0).0 + G1Projective::from((other.0).0)))
+        let a = (self.0).0;
+        let b = G1Projective::from((other.0).0);
+        let c = (a + b).to_affine();
+        PublicKeyShare(PublicKey(c))
     }
 }

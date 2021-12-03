@@ -7,6 +7,7 @@ use anyhow::{anyhow, bail, Result};
 use bls12_381::{G1Affine, G1Projective, G2Affine, G2Projective, Scalar};
 use ff::Field;
 use group::prime::PrimeCurve;
+use group::Curve;
 use std::borrow::Borrow;
 use std::hash::{Hash, Hasher};
 
@@ -39,13 +40,13 @@ impl PublicKeySet {
 
     /// Returns the public key.
     pub fn public_key(&self) -> PublicKey {
-        PublicKey(self.commit.coeff[0])
+        PublicKey((self.commit.coeff[0]).to_affine())
     }
 
     /// Returns the `i`-th public key share.
     pub fn public_key_share<T: IntoScalar>(&self, i: T) -> PublicKeyShare {
         let value = self.commit.evaluate(into_scalar_plus_1(i));
-        PublicKeyShare(PublicKey(value))
+        PublicKeyShare(PublicKey(value.to_affine()))
     }
 
     pub fn combine_signatures<'a, T, I>(&self, shares: I) -> Result<Signature>
@@ -54,10 +55,8 @@ impl PublicKeySet {
         T: IntoScalar,
     {
         let samples = shares.into_iter().map(|(i, share)| (i, &(share.0).0));
-        Ok(Signature(combine_signatures_(
-            self.commit.degree(),
-            samples,
-        )?))
+        let combined = combine_signatures_(self.commit.degree(), samples)?;
+        Ok(Signature(combined))
     }
 
     /// Combine two PublicKeySet into a single one (used from threshold generation)
@@ -129,11 +128,11 @@ where
     Ok(result)
 }
 
-fn combine_signatures_<B, T, I>(t: usize, items: I) -> Result<G2Projective>
+fn combine_signatures_<B, T, I>(t: usize, items: I) -> Result<G2Affine>
 where
     I: IntoIterator<Item = (T, B)>,
     T: IntoScalar,
-    B: Borrow<G2Projective>,
+    B: Borrow<G2Affine>,
 {
     let samples: Vec<_> = items
         .into_iter()
@@ -175,5 +174,5 @@ where
         l0 *= &denom.invert().unwrap();
         result += sample.borrow() * l0;
     }
-    Ok(result)
+    Ok(result.to_affine())
 }
