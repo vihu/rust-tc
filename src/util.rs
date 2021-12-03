@@ -79,6 +79,13 @@ mod tests {
 }
 
 /// Compares two curve elements and returns their `Ordering`.
+pub fn cmp_g1_affine(x: &G1Affine, y: &G1Affine) -> Ordering {
+    let xc = x.to_compressed();
+    let yc = y.to_compressed();
+    xc.as_ref().cmp(yc.as_ref())
+}
+
+/// Compares two curve elements and returns their `Ordering`.
 pub fn cmp_g1_projective(x: &G1Projective, y: &G1Projective) -> Ordering {
     let xc = x.to_affine().to_compressed();
     let yc = y.to_affine().to_compressed();

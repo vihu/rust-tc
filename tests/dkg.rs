@@ -3,6 +3,7 @@ mod tests {
     use bls12_381::{G1Affine, Scalar};
     use rust_tc::{BivarPoly, IntoScalar, Poly};
     use std::collections::BTreeMap;
+    use std::time::Instant;
 
     #[test]
     fn distributed_key_generation() {
@@ -25,9 +26,11 @@ mod tests {
         // verify the values they received, and collect them.
         for (bi_poly, bi_commit) in bi_polys.iter().zip(&pub_bi_commits) {
             for m in 1..=node_num {
+                let now = Instant::now();
                 // Node `m` receives its row and verifies it.
                 let row_poly = bi_poly.row(m);
                 let row_commit = bi_commit.row(m);
+                println!("{:?}", now.elapsed());
                 assert_eq!(row_poly.commitment(), row_commit);
                 // Node `s` receives the `s`-th value and verifies it.
                 for s in 1..=node_num {

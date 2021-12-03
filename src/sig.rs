@@ -72,8 +72,7 @@ pub fn aggregate(sigs: &[Signature]) -> Result<Signature> {
 
     let mut aggregate = G2Projective::from(sigs[0].0);
 
-    for i in 1..sigs.len() {
-        let next = &sigs[i];
+    for next in sigs.iter().skip(1) {
         if !next.is_valid() {
             bail!("Cannot validate signature {:?}", next)
         }
@@ -118,7 +117,7 @@ pub fn core_aggregate_verify(
         .iter()
         .zip(hashes.iter())
         .map(|(pk, h)| {
-            let pk = G1Affine::from(pk.0);
+            let pk = pk.0;
             let h = G2Prepared::from(G2Affine::from(*h));
             multi_miller_loop(&[(&pk, &h)])
         })
@@ -128,7 +127,7 @@ pub fn core_aggregate_verify(
         })
         .final_exponentiation();
 
-    let c2: Gt = pairing(&G1Affine::generator(), &G2Affine::from(signature.0));
+    let c2: Gt = pairing(&G1Affine::generator(), &signature.0);
 
     Ok(c1 == c2)
 }
@@ -140,7 +139,7 @@ pub fn verify_messages(
     messages: &[&[u8]],
     public_keys: &[PublicKey],
 ) -> Result<bool> {
-    let hashes: Vec<_> = messages.iter().map(|msg| hash_g2(msg)).collect();
+    let hashes: Vec<_> = messages.iter().map(hash_g2).collect();
 
     core_aggregate_verify(signature, &hashes, public_keys)
 }

@@ -11,7 +11,7 @@ impl PublicKeyShare {
         let Ciphertext(ref u, ref v, ref w) = *ct;
         let hash = hash_g1_g2(*u, v);
         pairing(&G1Affine::from(share.0), &G2Affine::from(hash))
-            == pairing(&G1Affine::from(self.0 .0), &G2Affine::from(w))
+            == pairing(&(self.0 .0), &G2Affine::from(w))
     }
 
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> bool {

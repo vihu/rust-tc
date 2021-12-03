@@ -17,7 +17,7 @@ pub struct Commitment {
 
 impl PartialOrd for Commitment {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -48,7 +48,7 @@ impl<B: Borrow<Commitment>> AddAssign<B> for Commitment {
         self.coeff.resize(len, G1Projective::identity());
         let mut new_coeffs: Vec<G1Projective> = Vec::with_capacity(self.coeff.len());
         for (self_c, rhs_c) in self.coeff.iter().zip(&rhs.borrow().coeff) {
-            new_coeffs.push(*self_c + G1Projective::from(*rhs_c))
+            new_coeffs.push(*self_c + *rhs_c)
         }
         *self = Commitment { coeff: new_coeffs };
         self.remove_zeros()
@@ -80,12 +80,11 @@ impl Commitment {
 
     /// Returns the `i`-th public key share.
     pub fn evaluate<T: IntoScalar>(&self, i: T) -> G1Projective {
-        let result = match self.coeff.last() {
+        let mut res = match self.coeff.last() {
             None => return G1Projective::generator(),
             Some(c) => *c,
         };
         let x = i.into_scalar();
-        let mut res: G1Projective = G1Projective::from(result);
         for c in self.coeff.iter().rev().skip(1) {
             res *= x;
             res += c;
@@ -107,10 +106,10 @@ impl Commitment {
 
     /// Generates a public key from a commitment
     pub fn public_key(&self) -> PublicKey {
-        let mut pub_key = G1Projective::from(self.coeff[0]);
+        let mut pub_key = self.coeff[0];
         let length = self.coeff.len() as usize;
         for i in 1..length {
-            pub_key += G1Projective::from(self.coeff[i]);
+            pub_key += self.coeff[i];
         }
         PublicKey(pub_key.to_affine())
     }

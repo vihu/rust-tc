@@ -15,8 +15,8 @@ pub struct PublicKey(pub G1Affine);
 
 impl PublicKey {
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
-        let gt1 = pairing(&G1Affine::generator(), &G2Affine::from(sig.0));
-        let gt2 = pairing(&G1Affine::from(self.0), &G2Affine::from(hash_g2(msg)));
+        let gt1 = pairing(&G1Affine::generator(), &sig.0);
+        let gt2 = pairing(&self.0, &G2Affine::from(hash_g2(msg)));
         gt1 == gt2
     }
 

@@ -5,6 +5,7 @@ use group::Curve;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Mul, MulAssign};
+use std::time::Instant;
 
 /// A commitment to a symmetric bivariate polynomial.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -26,7 +27,7 @@ impl Hash for BivarCommitment {
 
 impl PartialOrd for BivarCommitment {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -69,6 +70,7 @@ impl BivarCommitment {
     /// Returns the `x`-th row, as a commitment to a univariate polynomial.
     pub fn row<T: IntoScalar>(&self, x: T) -> Commitment {
         let x_pow = self.powers(x);
+        let now = Instant::now();
         let coeff: Vec<G1Projective> = (0..=self.degree)
             .map(|i| {
                 let mut result = G1Projective::identity();
@@ -81,6 +83,7 @@ impl BivarCommitment {
                 result
             })
             .collect();
+        println!("{:?}", now.elapsed());
         Commitment { coeff }
     }
 

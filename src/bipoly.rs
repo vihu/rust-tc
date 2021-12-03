@@ -4,7 +4,7 @@ use anyhow::{bail, Result};
 use bls12_381::{G1Affine, G1Projective, Scalar};
 use ff::Field;
 use rand::Rng;
-use std::iter::repeat_with;
+use std::iter::{repeat_with, FromIterator};
 use zeroize::Zeroize;
 
 /// A symmetric bivariate polynomial in the prime field.
