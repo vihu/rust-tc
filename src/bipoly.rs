@@ -106,7 +106,7 @@ impl BivarPoly {
 
     /// Returns the corresponding commitment. That information can be shared publicly.
     pub fn commitment(&self) -> BivarCommitment {
-        let to_pub = |c: &Scalar| (G1Projective::generator() * *c);
+        let to_pub = |c: &Scalar| G1Affine::from(G1Projective::generator() * *c);
         BivarCommitment {
             degree: self.degree,
             coeff: self.coeff.iter().map(to_pub).collect(),
@@ -133,6 +133,7 @@ impl BivarPoly {
 mod tests {
     use super::*;
     use bls12_381::{G1Affine, G1Projective};
+    use ff::Field;
     use std::collections::BTreeMap;
 
     #[test]

@@ -1,13 +1,14 @@
 use crate::util::{clear_scalar, coeff_pos};
 use crate::{Commitment, IntoScalar};
 use anyhow::{bail, Result};
-use bls12_381::{G1Affine, G1Projective, Scalar};
+use bls12_381::{G1Affine, Scalar};
 use ff::Field;
 use rand::Rng;
 use rand_core::RngCore;
 use std::borrow::Borrow;
 use std::iter;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use subtle::ConstantTimeEq;
 use zeroize::Zeroize;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -45,7 +46,9 @@ impl Poly {
 
     /// Returns `true` if the polynomial is the constant value `0`.
     pub fn is_zero(&self) -> bool {
-        self.coeff.iter().all(|coeff| coeff.is_zero())
+        self.coeff
+            .iter()
+            .all(|coeff| bool::from(coeff.ct_eq(&Scalar::zero())))
     }
 
     /// Returns the polynomial with constant value `1`.
@@ -92,7 +95,12 @@ impl Poly {
 
     /// Removes all trailing zero coefficients.
     fn remove_zeros(&mut self) {
-        let zeros = self.coeff.iter().rev().take_while(|c| c.is_zero()).count();
+        let zeros = self
+            .coeff
+            .iter()
+            .rev()
+            .take_while(|c| bool::from(c.ct_eq(&Scalar::zero())))
+            .count();
         let len = self.coeff.len() - zeros;
         self.coeff.truncate(len);
     }
@@ -199,7 +207,7 @@ impl<'a> Add<Scalar> for Poly {
     type Output = Poly;
 
     fn add(mut self, rhs: Scalar) -> Self::Output {
-        if self.is_zero() && !rhs.is_zero() {
+        if bool::from(self.is_zero()) && bool::from(!rhs.is_zero()) {
             self.coeff.push(rhs);
         } else {
             self.coeff[0].add_assign(&rhs);
@@ -305,7 +313,7 @@ impl<B: Borrow<Self>> MulAssign<B> for Poly {
 
 impl MulAssign<Scalar> for Poly {
     fn mul_assign(&mut self, rhs: Scalar) {
-        if rhs.is_zero() {
+        if bool::from(rhs.is_zero()) {
             self.zeroize();
             self.coeff.clear();
         } else {
@@ -320,7 +328,7 @@ impl<'a> Mul<&'a Scalar> for Poly {
     type Output = Poly;
 
     fn mul(mut self, rhs: &Scalar) -> Self::Output {
-        if rhs.is_zero() {
+        if bool::from(rhs.is_zero()) {
             self.zeroize();
             self.coeff.clear();
         } else {

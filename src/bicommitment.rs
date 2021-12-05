@@ -1,4 +1,4 @@
-use crate::util::{cmp_g1_projective, coeff_pos, powers};
+use crate::util::{cmp_g1_affine, cmp_g1_projective, coeff_pos, powers};
 use crate::{Commitment, IntoScalar};
 use bls12_381::{G1Affine, G1Projective, Scalar};
 use group::Curve;
@@ -13,14 +13,14 @@ pub struct BivarCommitment {
     /// The polynomial's degree in each of the two variables.
     pub(crate) degree: usize,
     /// The commitments to the coefficients.
-    pub(crate) coeff: Vec<G1Projective>,
+    pub(crate) coeff: Vec<G1Affine>,
 }
 
 impl Hash for BivarCommitment {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.degree.hash(state);
         for c in &self.coeff {
-            c.to_affine().to_compressed().as_ref().hash(state);
+            c.to_compressed().as_ref().hash(state);
         }
     }
 }
@@ -44,7 +44,7 @@ impl Ord for BivarCommitment {
                 .iter()
                 .zip(&other.coeff)
                 .find(|(x, y)| x != y)
-                .map_or(Ordering::Equal, |(x, y)| cmp_g1_projective(x, y))
+                .map_or(Ordering::Equal, |(x, y)| cmp_g1_affine(x, y))
         })
     }
 }
