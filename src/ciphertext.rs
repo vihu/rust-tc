@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
 /// An encrypted message.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(Eq, Debug, Clone)]
 pub struct Ciphertext(pub G1Projective, pub Vec<u8>, pub G2Projective);
 
 impl Ciphertext {
@@ -25,6 +25,12 @@ impl Hash for Ciphertext {
         u.to_affine().to_compressed().as_ref().hash(state);
         v.hash(state);
         w.to_affine().to_compressed().as_ref().hash(state);
+    }
+}
+
+impl PartialEq for Ciphertext {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0 && self.1 == other.1 && self.2 == other.2
     }
 }
 

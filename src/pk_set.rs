@@ -12,7 +12,7 @@ use std::borrow::Borrow;
 use std::hash::{Hash, Hasher};
 
 /// A public key and an associated set of public key shares.
-#[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, Ord, PartialOrd)]
 pub struct PublicKeySet {
     /// The coefficients of a polynomial whose value at `0` is the "master key", and value at
     /// `i + 1` is key share number `i`.
@@ -22,6 +22,12 @@ pub struct PublicKeySet {
 impl Hash for PublicKeySet {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.commit.hash(state);
+    }
+}
+
+impl PartialEq for PublicKeySet {
+    fn eq(&self, other: &Self) -> bool {
+        self.commit == other.commit
     }
 }
 

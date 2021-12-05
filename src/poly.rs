@@ -248,6 +248,7 @@ impl<B: Borrow<Poly>> Sub<B> for Poly {
     }
 }
 
+#[allow(clippy::suspicious_arithmetic_impl)]
 impl<'a> Sub<Scalar> for Poly {
     type Output = Poly;
 

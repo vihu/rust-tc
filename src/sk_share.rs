@@ -34,3 +34,9 @@ impl SecretKeyShare {
         SecretKeyShare(SecretKey::from_mut(scalar))
     }
 }
+
+impl Default for SecretKeyShare {
+    fn default() -> Self {
+        Self::new()
+    }
+}

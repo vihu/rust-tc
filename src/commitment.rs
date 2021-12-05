@@ -9,7 +9,7 @@ use std::ops::{Add, AddAssign};
 use subtle::Choice;
 
 /// A commitment to a univariate polynomial.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub struct Commitment {
     /// The coefficients of the polynomial.
     pub coeff: Vec<G1Projective>,
@@ -39,6 +39,12 @@ impl Hash for Commitment {
         for c in &self.coeff {
             c.to_affine().to_compressed().as_ref().hash(state);
         }
+    }
+}
+
+impl PartialEq for Commitment {
+    fn eq(&self, other: &Self) -> bool {
+        self.coeff == other.coeff
     }
 }
 

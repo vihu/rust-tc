@@ -8,7 +8,7 @@ use std::ops::{Add, Mul, MulAssign};
 use std::time::Instant;
 
 /// A commitment to a symmetric bivariate polynomial.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq)]
 pub struct BivarCommitment {
     /// The polynomial's degree in each of the two variables.
     pub(crate) degree: usize,
@@ -22,6 +22,12 @@ impl Hash for BivarCommitment {
         for c in &self.coeff {
             c.to_affine().to_compressed().as_ref().hash(state);
         }
+    }
+}
+
+impl PartialEq for BivarCommitment {
+    fn eq(&self, other: &Self) -> bool {
+        self.degree == other.degree && self.coeff == other.coeff
     }
 }
 
