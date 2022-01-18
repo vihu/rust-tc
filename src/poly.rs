@@ -165,7 +165,7 @@ impl Poly {
 
     /// Returns the corresponding commitment.
     pub fn commitment(&self) -> Commitment {
-        let to_g1 = |c: &Scalar| (G1Affine::generator() * c);
+        let to_g1 = |c: &Scalar| (G1Affine::from(G1Affine::generator() * c));
         Commitment {
             coeff: self.coeff.iter().map(to_g1).collect(),
         }

@@ -10,8 +10,7 @@ impl PublicKeyShare {
     pub fn verify_decryption_share(&self, share: &DecryptionShare, ct: &Ciphertext) -> bool {
         let Ciphertext(ref u, ref v, ref w) = *ct;
         let hash = hash_g1_g2(*u, v);
-        pairing(&G1Affine::from(share.0), &G2Affine::from(hash))
-            == pairing(&(self.0 .0), &G2Affine::from(w))
+        pairing(&share.0, &hash) == pairing(&(self.0 .0), w)
     }
 
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> bool {

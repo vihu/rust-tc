@@ -64,7 +64,7 @@ impl SecretKey {
         }
         let Ciphertext(ref u, ref v, _) = *ct;
         let g = u * self.0;
-        Some(xor_with_hash(g, v))
+        Some(xor_with_hash(G1Affine::from(g), v))
     }
 
     pub fn random() -> Self {

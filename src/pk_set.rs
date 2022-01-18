@@ -46,13 +46,13 @@ impl PublicKeySet {
 
     /// Returns the public key.
     pub fn public_key(&self) -> PublicKey {
-        PublicKey((self.commit.coeff[0]).to_affine())
+        PublicKey(self.commit.coeff[0])
     }
 
     /// Returns the `i`-th public key share.
     pub fn public_key_share<T: IntoScalar>(&self, i: T) -> PublicKeyShare {
         let value = self.commit.evaluate(into_scalar_plus_1(i));
-        PublicKeyShare(PublicKey(value.to_affine()))
+        PublicKeyShare(PublicKey(value))
     }
 
     pub fn combine_signatures<'a, T, I>(&self, shares: I) -> Result<Signature>
@@ -85,11 +85,11 @@ impl PublicKeySet {
 
 // TODO: Figure out how to combine these two functions
 
-fn decrypt_<B, T, I>(t: usize, items: I) -> Result<G1Projective>
+fn decrypt_<B, T, I>(t: usize, items: I) -> Result<G1Affine>
 where
     I: IntoIterator<Item = (T, B)>,
     T: IntoScalar,
-    B: Borrow<G1Projective>,
+    B: Borrow<G1Affine>,
 {
     let samples: Vec<_> = items
         .into_iter()
@@ -131,7 +131,7 @@ where
         l0 *= &denom.invert().unwrap();
         result += sample.borrow() * l0;
     }
-    Ok(result)
+    Ok(G1Affine::from(result))
 }
 
 fn combine_signatures_<B, T, I>(t: usize, items: I) -> Result<G2Affine>

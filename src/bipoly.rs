@@ -160,6 +160,6 @@ mod tests {
 
         let mut rng = rand::thread_rng();
         let (x, y): (Scalar, Scalar) = (Scalar::random(&mut rng), Scalar::random(&mut rng));
-        assert_eq!(zero_commitment.evaluate(x, y), G1Projective::identity());
+        assert_eq!(zero_commitment.evaluate(x, y), G1Affine::identity());
     }
 }

@@ -56,7 +56,7 @@ impl BivarCommitment {
     }
 
     /// Returns the commitment's value at the point `(x, y)`.
-    pub fn evaluate<T: IntoScalar>(&self, x: T, y: T) -> G1Projective {
+    pub fn evaluate<T: IntoScalar>(&self, x: T, y: T) -> G1Affine {
         let x_pow = self.powers(x);
         let y_pow = self.powers(y);
         // TODO: Can we save a few multiplication steps here due to the symmetry?
@@ -70,14 +70,14 @@ impl BivarCommitment {
                 result += &summand;
             }
         }
-        result
+        G1Affine::from(result)
     }
 
     /// Returns the `x`-th row, as a commitment to a univariate polynomial.
     pub fn row<T: IntoScalar>(&self, x: T) -> Commitment {
         let x_pow = self.powers(x);
         let now = Instant::now();
-        let coeff: Vec<G1Projective> = (0..=self.degree)
+        let coeff: Vec<G1Affine> = (0..=self.degree)
             .map(|i| {
                 let mut result = G1Projective::identity();
                 for (j, x_pow_j) in x_pow.iter().enumerate() {
@@ -86,7 +86,7 @@ impl BivarCommitment {
                     summand *= x_pow_j;
                     result += &summand;
                 }
-                result
+                G1Affine::from(result)
             })
             .collect();
         println!("{:?}", now.elapsed());

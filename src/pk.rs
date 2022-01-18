@@ -1,5 +1,5 @@
 use crate::{ciphertext::Ciphertext, sig::Signature, util, util::hash_g2};
-use bls12_381::{pairing, G1Affine, G1Projective, G2Affine, Scalar};
+use bls12_381::{pairing, G1Affine, G2Affine, Scalar};
 use ff::Field;
 use group::Curve;
 use rand::rngs::OsRng;
@@ -16,7 +16,7 @@ pub struct PublicKey(pub G1Affine);
 impl PublicKey {
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
         let gt1 = pairing(&G1Affine::generator(), &sig.0);
-        let gt2 = pairing(&self.0, &G2Affine::from(hash_g2(msg)));
+        let gt2 = pairing(&self.0, &hash_g2(msg));
         gt1 == gt2
     }
 
@@ -31,12 +31,12 @@ impl PublicKey {
     /// Encrypts the message.
     pub fn encrypt_with_rng<R: RngCore, M: AsRef<[u8]>>(&self, rng: &mut R, msg: M) -> Ciphertext {
         let r: Scalar = Scalar::random(rng);
-        let u = G1Affine::generator() * r;
+        let u = G1Affine::from(G1Affine::generator() * r);
         let v: Vec<u8> = {
             let g = self.0 * r;
-            util::xor_with_hash(g, msg.as_ref())
+            util::xor_with_hash(G1Affine::from(g), msg.as_ref())
         };
-        let w = util::hash_g1_g2(u, &v) * r;
+        let w = G2Affine::from(util::hash_g1_g2(u, &v) * r);
         Ciphertext(u, v, w)
     }
 }

@@ -22,21 +22,21 @@ pub fn sha3_256(data: &[u8]) -> [u8; 32] {
 }
 
 /// Returns a hash of the given message in `G2Affine` space.
-pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2Projective {
+pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2Affine {
     let digest = sha3_256(msg.as_ref());
-    G2Projective::random(&mut ChaChaRng::from_seed(digest))
+    G2Affine::from(G2Projective::random(&mut ChaChaRng::from_seed(digest)))
 }
 
 /// Returns the bitwise xor of `bytes` with a sequence of pseudorandom bytes determined by `g1`.
-pub fn xor_with_hash(g1: G1Projective, bytes: &[u8]) -> Vec<u8> {
-    let digest = sha3_256(g1.to_affine().to_compressed().as_ref());
+pub fn xor_with_hash(g1: G1Affine, bytes: &[u8]) -> Vec<u8> {
+    let digest = sha3_256(g1.to_compressed().as_ref());
     let rng = ChaChaRng::from_seed(digest);
     let xor = |(a, b): (u8, &u8)| a ^ b;
     rng.sample_iter(&Standard).zip(bytes).map(xor).collect()
 }
 
 /// Returns a hash of the group element and message, in the second group.
-pub fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1Projective, msg: M) -> G2Projective {
+pub fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1Affine, msg: M) -> G2Affine {
     // If the message is large, hash it, otherwise copy it.
     // TODO: Benchmark and optimize the threshold.
     let mut msg = if msg.as_ref().len() > 64 {
@@ -44,7 +44,7 @@ pub fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1Projective, msg: M) -> G2Projective {
     } else {
         msg.as_ref().to_vec()
     };
-    msg.extend(g1.to_affine().to_compressed().as_ref());
+    msg.extend(g1.to_compressed().as_ref());
     hash_g2(&msg)
 }
 
@@ -96,6 +96,13 @@ pub fn cmp_g1_projective(x: &G1Projective, y: &G1Projective) -> Ordering {
 pub fn cmp_g2_projective(x: &G2Projective, y: &G2Projective) -> Ordering {
     let xc = x.to_affine().to_compressed();
     let yc = y.to_affine().to_compressed();
+    xc.as_ref().cmp(yc.as_ref())
+}
+
+/// Compares two curve elements and returns their `Ordering`.
+pub fn cmp_g2_affine(x: &G2Affine, y: &G2Affine) -> Ordering {
+    let xc = x.to_compressed();
+    let yc = y.to_compressed();
     xc.as_ref().cmp(yc.as_ref())
 }
 

@@ -84,7 +84,7 @@ pub fn aggregate(sigs: &[Signature]) -> Result<Signature> {
 
 pub fn core_aggregate_verify(
     signature: &Signature,
-    hashes: &[G2Projective],
+    hashes: &[G2Affine],
     public_keys: &[PublicKey],
 ) -> Result<bool> {
     // Either public_keys or hashes is empty, bail

@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 
 /// An encrypted message.
 #[derive(Eq, Debug, Clone)]
-pub struct Ciphertext(pub G1Projective, pub Vec<u8>, pub G2Projective);
+pub struct Ciphertext(pub G1Affine, pub Vec<u8>, pub G2Affine);
 
 impl Ciphertext {
     /// Returns `true` if this is a valid ciphertext. This check is necessary to prevent
@@ -14,17 +14,16 @@ impl Ciphertext {
     pub fn verify(&self) -> bool {
         let Ciphertext(ref u, ref v, ref w) = *self;
         let hash = util::hash_g1_g2(*u, v);
-        pairing(&G1Affine::generator(), &G2Affine::from(w))
-            == pairing(&G1Affine::from(u), &G2Affine::from(hash))
+        pairing(&G1Affine::generator(), w) == pairing(u, &G2Affine::from(hash))
     }
 }
 
 impl Hash for Ciphertext {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let Ciphertext(ref u, ref v, ref w) = *self;
-        u.to_affine().to_compressed().as_ref().hash(state);
+        u.to_compressed().as_ref().hash(state);
         v.hash(state);
-        w.to_affine().to_compressed().as_ref().hash(state);
+        w.to_compressed().as_ref().hash(state);
     }
 }
 
@@ -44,8 +43,8 @@ impl Ord for Ciphertext {
     fn cmp(&self, other: &Self) -> Ordering {
         let Ciphertext(ref u0, ref v0, ref w0) = self;
         let Ciphertext(ref u1, ref v1, ref w1) = other;
-        util::cmp_g1_projective(u0, u1)
+        util::cmp_g1_affine(u0, u1)
             .then(v0.cmp(v1))
-            .then(util::cmp_g2_projective(w0, w1))
+            .then(util::cmp_g2_affine(w0, w1))
     }
 }
